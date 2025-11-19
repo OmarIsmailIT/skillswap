@@ -1,0 +1,11 @@
+[
+  {
+    "title": "Cooking Basics - Learn Pasta",
+    "description": "I'll teach you how to make pasta from scratch.",
+    "category": "cooking",
+    "tags": ["cooking", "pasta", "beginner"],
+    "durationMinutes": 60,
+    "costCredits": 1,
+    "ownerName": "Sara Ali"
+  }
+]

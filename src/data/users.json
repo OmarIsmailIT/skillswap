@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Omar Ismail",
+    "email": "omar@example.com",
+    "hashedPassword": "hashed_pw_here",
+    "bio": "Backend developer who loves teaching web basics.",
+    "skillsOffered": ["node.js", "photoshop"],
+    "skillsRequested": ["guitar", "english"],
+    "credits": 3,
+    "ratingAvg": 2.8,
+    "reviewsCount": 20
+  },
+  {
+    "name": "Sara Ali",
+    "email": "sara@example.com",
+    "hashedPassword": "hashed_pw_here",
+    "bio": "Cooking enthusiast.",
+    "skillsOffered": ["cooking"],
+    "skillsRequested": ["web design"],
+    "credits": 1
+  }
+]
