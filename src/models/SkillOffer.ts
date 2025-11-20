@@ -7,7 +7,7 @@ const TimeSlotSchema = new Schema({
 }, { _id: false });
 
 const SkillOfferSchema = new Schema({
-  owner: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+  owner: { type: Schema.Types.ObjectId, ref: 'User', required: true},
 
   title: { type: String, required: true, trim: true, maxLength: 120 },
   description: { type: String, required: true, trim: true, maxLength: 2000 },
@@ -28,6 +28,11 @@ const SkillOfferSchema = new Schema({
   avgRating: { type: Number, default: 0, min: 0, max: 5 },
 }, { timestamps: true });
 
-SkillOfferSchema.index({ title: 'text', description: 'text' });
+SkillOfferSchema.index({ title: "text", description: "text" }); // full-text search
+SkillOfferSchema.index({ owner: 1 });                           // search by user
+SkillOfferSchema.index({ createdAt: -1 });                      // pagination/sorting
+
+// Prevent duplicate titles for the same owner
+SkillOfferSchema.index({ owner: 1, title: 1 }, { unique: true });
 
 export default models.SkillOffer || model('SkillOffer', SkillOfferSchema);

@@ -3,7 +3,7 @@ import { Schema, model, models } from "mongoose";
 
 const UserSchema = new Schema(
   {
-    name: { type: String, required: true, trim: true, maxLength: 100 },
+    name: { type: String, required: true, unique: true, trim: true, maxLength: 100 },
     email: {
       type: String,
       required: true,
@@ -15,8 +15,8 @@ const UserSchema = new Schema(
     hashedPassword: { type: String, required: true },
     bio: { type: String, trim: true, maxLength: 500 },
     avatarUrl: { type: String, trim: true },
-
-    skillsOffered: [{ type: String, trim: true, lowercase: true, index: true }],
+    topSkills: [{ type: String, trim: true, lowercase: true }],
+    skillsOffered: [{ type: Schema.Types.ObjectId, ref: "SkillOffer", trim: true, lowercase: true, index: true }],
     skillsRequested: [
       { type: String, trim: true, lowercase: true, index: true },
     ],
@@ -32,5 +32,6 @@ const UserSchema = new Schema(
   },
   { timestamps: true }
 );
+UserSchema.index({ name: 1 });
 
 export default models.User || model("User", UserSchema);

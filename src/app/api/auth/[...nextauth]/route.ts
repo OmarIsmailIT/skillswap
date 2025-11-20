@@ -34,7 +34,10 @@ export const authOptions: NextAuthOptions = {
         const user = await User.findOne({ email: credentials.email });
         if (!user) return null;
 
-        const isValid = await bcrypt.compare(credentials.password, user.hashedPassword);
+        const isValid = await bcrypt.compare(
+          credentials.password,
+          user.hashedPassword
+        );
         if (!isValid) return null;
 
         return {
@@ -47,6 +50,10 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: "jwt",
+    maxAge: 60 * 60 * 24 * 7, // 7 days in seconds
+  },
+  jwt: {
+    maxAge: 60 * 60 * 24 * 7, // keep in sync
   },
   pages: {
     signIn: "/login",

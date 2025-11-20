@@ -3,6 +3,7 @@ import { connectDB } from "@/src/lib/db";
 import bcrypt from "bcryptjs";
 import User from "@/src/models/User";
 import { registerSchema } from "@/src/lib/validators/auth";
+import { IUser } from "@/src/types";
 
 export async function POST(req: Request) {
   try {
@@ -13,19 +14,33 @@ export async function POST(req: Request) {
     const { name, email, password } = parsed;
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return NextResponse.json(
-        { error: "Email already exists" },
-        { status: 400 }
-      );
+    const existingUsers = await User.find({
+      $or: [{ email }, { name }],
+    });
+
+    const errors: string[] = [];
+
+    existingUsers.forEach((user: IUser) => {
+      if (user.email === email && !errors.includes("Email already exists")) {
+        errors.push("Email already exists");
+      }
+      if (
+        user.name === name &&
+        !errors.includes("Username already exists")
+      ) {
+        errors.push("Username already exists");
+      }
+    });
+
+    if (errors.length > 0) {
+      return NextResponse.json({ errors }, { status: 409 });
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user
-     await User.create({
+    await User.create({
       name,
       email,
       hashedPassword,
@@ -36,6 +51,15 @@ export async function POST(req: Request) {
       { status: 201 }
     );
   } catch (error: any) {
+    // ✅ Catch Mongo duplicate key errors (race condition safety)
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyValue)[0];
+      return NextResponse.json(
+        { errors: [`${field} already exists`] },
+        { status: 409 }
+      );
+    }
+
     if (error.name === "ZodError") {
       // ZodError has `issues`, not `errors`
       return NextResponse.json(

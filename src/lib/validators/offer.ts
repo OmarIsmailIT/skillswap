@@ -9,5 +9,13 @@ export const createOfferSchema = z.object({
   durationMinutes: z.number().int().min(15).max(240),
   costCredits: z.number().int().min(1),
   locationType: z.enum(['online', 'in_person']).optional(),
-  timezone: z.string().max(50).optional(),
+  timeSlots: z.array(
+    z.object({
+      start: z.string().datetime(),
+      end: z.string().datetime(),
+    })
+  ).optional(),
+  status: z.enum(["active", "inactive"]).optional(),
 });
+
+export const updateOfferSchema = createOfferSchema.partial();
