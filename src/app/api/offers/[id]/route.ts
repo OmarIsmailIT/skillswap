@@ -47,7 +47,7 @@ export async function GET(
     }
 
     return NextResponse.json(
-      { success: true, offer, message: "Offer fetched successfully" },
+      { success: true, offer },
       { status: 200 }
     );
   } catch (error: any) {

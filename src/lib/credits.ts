@@ -1,9 +1,13 @@
-// src/lib/credits.ts
 import mongoose from "mongoose";
 import User from "@/src/models/User";
 import Booking from "@/src/models/Booking";
 import CreditTransaction from "@/src/models/CreditTransaction";
 
+/**
+ * Completes a booking and transfers credits from requester to provider.
+ * Deducts from both reservedCredits and credits of requester,
+ * increments provider credits, and logs a CreditTransaction.
+ */
 export async function completeBookingWithTransfer(
   bookingId: string,
   actorUserId: string
@@ -20,14 +24,22 @@ export async function completeBookingWithTransfer(
       const provider = await User.findById(booking.provider).session(session);
       if (!requester || !provider) throw new Error("Users not found");
 
-      if (requester.credits < booking.costCredits)
-        throw new Error("Insufficient credits");
+      console.log(requester.reservedCredits);
+      if (requester.reservedCredits < booking.costCredits) {
+        throw new Error("Insufficient reserved credits");
+      }
 
+      // Deduct from requester
+      requester.reservedCredits -= booking.costCredits;
       requester.credits -= booking.costCredits;
+
+      // Add to provider
       provider.credits += booking.costCredits;
+
       await requester.save({ session });
       await provider.save({ session });
 
+      // Create transaction record
       const transfer = await CreditTransaction.create(
         [
           {
@@ -42,6 +54,7 @@ export async function completeBookingWithTransfer(
         { session }
       );
 
+      // Update booking
       booking.status = "completed";
       booking.creditTransferId = transfer[0]._id;
       await booking.save({ session });

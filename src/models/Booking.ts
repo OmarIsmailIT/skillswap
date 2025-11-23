@@ -22,5 +22,6 @@ const BookingSchema = new Schema({
 
 BookingSchema.index({ provider: 1, status: 1, dateStart: -1 });
 BookingSchema.index({ requester: 1, status: 1, dateStart: -1 });
+BookingSchema.index({ skillOffer: 1, requester: 1, dateStart: 1, dateEnd: 1, status: 1 });
 
 export default models.Booking || model('Booking', BookingSchema);

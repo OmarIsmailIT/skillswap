@@ -22,6 +22,7 @@ const UserSchema = new Schema(
     ],
 
     credits: { type: Number, default: 2, min: 0 },
+    reservedCredits: { type: Number, default: 0 },
 
     ratingAvg: { type: Number, default: 0, min: 0, max: 5 },
     reviewsCount: { type: Number, default: 0, min: 0 },
@@ -29,6 +30,7 @@ const UserSchema = new Schema(
     emailVerifiedAt: { type: Date },
     isActive: { type: Boolean, default: true },
     lastLoginAt: { type: Date },
+    onBoardingCompleted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

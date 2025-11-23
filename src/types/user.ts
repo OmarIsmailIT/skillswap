@@ -9,7 +9,9 @@ export interface IUser {
   avatarUrl?: string;
   skillsOffered: string[];
   skillsRequested: string[];
+  topSkills?: string[];
   credits: number;
+  reservedCredits: number;
   ratingAvg?: number;
   reviewsCount?: number;
   emailVerifiedAt?: Date;

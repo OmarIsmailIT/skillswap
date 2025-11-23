@@ -145,13 +145,13 @@ export async function GET(req: Request) {
       Offer.countDocuments(query),
     ]);
 
-    const items = offers.length;
+    const itemsPerPage = Math.min(limit, offers.length);
 
     return NextResponse.json({
       offers,
       pagination: {
         total,
-        items,
+        itemsPerPage,
         page,
         pages: Math.ceil(total / limit),
       },
