@@ -9,7 +9,7 @@ interface PageProps {
 }
 
 async function getOffer(id: string) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/offers/${id}`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/offers/${id}`, {
     cache: 'no-store',
   });
   if (!res.ok) return null;
@@ -98,7 +98,7 @@ export default async function OfferDetailsPage({ params }: PageProps) {
             <div className="bg-white rounded-2xl shadow-md p-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">About This Skill</h2>
               <p className="text-gray-700 leading-relaxed mb-6 whitespace-pre-wrap">{offer.description}</p>
-              
+
               {offer.tags && offer.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {offer.tags.map((tag: string, index: number) => (
@@ -173,14 +173,14 @@ export default async function OfferDetailsPage({ params }: PageProps) {
           {/* Sidebar - Right 1/3 */}
           <div className="space-y-6">
             {/* Request Session Card */}
-            <BookingForm 
+            <BookingForm
               skillOfferId={offer._id}
               costCredits={offer.costCredits}
               durationMinutes={offer.durationMinutes}
             />
 
             {/* Reviews Card */}
-            <ReviewsList 
+            <ReviewsList
               skillOfferId={offer._id}
               initialRating={offer.owner?.ratingAvg}
               initialCount={offer.owner?.reviewsCount}

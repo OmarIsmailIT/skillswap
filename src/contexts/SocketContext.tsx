@@ -54,7 +54,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
             return;
         }
 
-        const socketInstance = io('http://localhost:3000', {
+        const socketInstance = io(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000', {
             path: '/api/socketio',
             transports: ['websocket', 'polling'],
             reconnection: true,
