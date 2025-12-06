@@ -48,6 +48,15 @@ export function SocketProvider({ children }: SocketProviderProps) {
         }
     }, [session?.user?.id]);
 
+    // Poll for credits (fallback for when socket is not connected)
+    useEffect(() => {
+        if (status === 'authenticated' && session?.user?.id) {
+            fetchCredits(); // Initial fetch
+            const interval = setInterval(fetchCredits, 30000); // Poll every 30s
+            return () => clearInterval(interval);
+        }
+    }, [status, session?.user?.id, fetchCredits]);
+
     // Initialize socket connection
     useEffect(() => {
         if (status !== 'authenticated' || !session?.user?.id) {
