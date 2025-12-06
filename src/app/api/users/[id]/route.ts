@@ -1,9 +1,9 @@
 // src/app/api/users/[id]/route.ts
 import { NextResponse } from "next/server";
-import { connectDB } from "@/src/lib/db";
+import { connectDB } from "@/lib/db";
 import mongoose from "mongoose";
-import { User, SkillOffer } from "@/src/models";
-import { IUser } from "@/src/types";
+import { User, SkillOffer } from "@/models";
+import { IUser } from "@/types";
 
 /**
  * GET /api/users/:id
@@ -18,7 +18,7 @@ import { IUser } from "@/src/types";
  */
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
@@ -28,19 +28,20 @@ export async function GET(
       return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
     }
 
-    // ✅ Fetch public profile
+    // ✅ Fetch public profile 
     const [user, skillOffers] = await Promise.all([
       User.findById(userId)
-        .select("name bio avatarUrl ratingAvg reviewsCount")
+        .select("name bio avatarUrl ratingAvg reviewsCount topSkills")
         .lean<IUser>(),
       SkillOffer.find({ owner: userId, status: "active" })
-        .select("title costCredits")
+        .select("_id title costCredits")
         .lean(),
     ]);
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+
     return NextResponse.json(
       {
         success: true,
@@ -51,8 +52,9 @@ export async function GET(
           avatarUrl: user.avatarUrl,
           ratingAvg: user.ratingAvg,
           reviewsCount: user.reviewsCount,
-          credits: user.credits, // optional — remove if you want to keep it private
+          topSkills: user.topSkills,
           skillsOffered: skillOffers.map((offer) => ({
+            _id: offer._id,
             title: offer.title,
             costCredits: offer.costCredits,
           })),

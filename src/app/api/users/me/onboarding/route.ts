@@ -1,7 +1,7 @@
-import { auth } from "@/src/lib/authSession";
-import { connectDB } from "@/src/lib/db";
-import { onboardingSchema } from "@/src/lib/validators/onborading";
-import { User } from "@/src/models";
+import { auth } from "@/lib/authSession";
+import { connectDB } from "@/lib/db";
+import { onboardingSchema } from "@/lib/validators/onborading";
+import { User } from "@/models";
 import { NextResponse } from "next/server";
 
 
@@ -24,9 +24,10 @@ export async function PATCH(req: Request) {
 
     await connectDB();
     const body = await req.json();
-    const { bio, topSkills } = onboardingSchema.parse(body);
+    const { bio, topSkills, avatarUrl } = onboardingSchema.parse(body);
 
     await User.findByIdAndUpdate(session.user.id, {
+      ...(avatarUrl ? { avatarUrl } : {}),
       ...(bio ? { bio } : {}),
       ...(Array.isArray(topSkills) && topSkills.length
         ? { topSkills: topSkills.map((s) => s.trim().toLowerCase()) }
@@ -45,5 +46,9 @@ export async function PATCH(req: Request) {
         { status: 500 }
       );
     }
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

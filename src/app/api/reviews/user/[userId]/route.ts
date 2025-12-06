@@ -1,9 +1,9 @@
 // src/app/api/reviews/user/[userId]/route.ts
 import { NextResponse } from "next/server";
-import { connectDB } from "@/src/lib/db";
+import { connectDB } from "@/lib/db";
 import mongoose from "mongoose";
-import { User, Booking, SkillOffer, Review } from "@/src/models";
-import { IUser } from "@/src/types";
+import { User, Booking, SkillOffer, Review } from "@/models";
+import { IUser } from "@/types";
 
 /**
  * GET /api/reviews/user/:userId
@@ -18,7 +18,7 @@ import { IUser } from "@/src/types";
  */
 export async function GET(
   req: Request,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
     await connectDB();

@@ -1,11 +1,11 @@
 // src/app/api/credits/me/route.ts
 import { NextResponse } from "next/server";
-import { connectDB } from "@/src/lib/db";
-import { auth } from "@/src/lib/authSession";
+import { connectDB } from "@/lib/db";
+import { auth } from "@/lib/authSession";
 import mongoose from "mongoose";
-import { User, Booking, SkillOffer } from "@/src/models";
-import CreditTransaction from "@/src/models/CreditTransaction";
-import { IUser } from "@/src/types";
+import { User, Booking, SkillOffer } from "@/models";
+import CreditTransaction from "@/models/CreditTransaction";
+import { IUser } from "@/types";
 
 /**
  * Retrieves the current user's credits, reserved credits, income and outcome
@@ -44,6 +44,7 @@ export async function GET(req: Request) {
         })
           .select("amountCredits fromUser toUser booking performedAt")
           .populate("fromUser", "name")
+          .populate("toUser", "name") // ✅ FIX: Populate toUser as well
           .populate({
             path: "booking",
             populate: {
@@ -97,6 +98,7 @@ export async function GET(req: Request) {
     return NextResponse.json(
       {
         success: true,
+        userId,
         credits: {
           current: user?.credits || 0,
           reserved: user?.reservedCredits || 0,
@@ -104,6 +106,7 @@ export async function GET(req: Request) {
           outcome: outcomeAgg[0]?.total || 0,
         },
         creditDetails,
+        transactions,
         page,
         limit,
         totalTransactions,

@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/src/lib/db";
-import Offer from "@/src/models/SkillOffer";
-import { createOfferSchema } from "@/src/lib/validators/offer";
-import { auth } from "@/src/lib/authSession";
-import User from "@/src/models/User";
+import { connectDB } from "@/lib/db";
+import {SkillOffer, User} from "@/models";
+import { createOfferSchema } from "@/lib/validators/offer";
+import { auth } from "@/lib/authSession";
 
-
+export const dynamic = 'force-dynamic';
 
 
 /**
@@ -25,15 +24,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    console.log(session.user?.name);
-
     await connectDB();
 
     // ✅ Parse and validate body
     const body = await req.json();
     const parsed = createOfferSchema.parse(body);
 
-    const existingOffer = await Offer.findOne({ title: parsed.title });
+    const existingOffer = await SkillOffer.findOne({ title: parsed.title });
     if (existingOffer) {
       return NextResponse.json(
         { error: "Offer with this title already exists" },
@@ -42,7 +39,7 @@ export async function POST(req: Request) {
     }
 
     // ✅ Attach owner from session
-    const offer = await Offer.create({
+    const offer = await SkillOffer.create({
       ...parsed,
       owner: session.user.id,
     });
@@ -96,6 +93,9 @@ export async function GET(req: Request) {
   try {
     await connectDB();
 
+    const session = await auth();
+    const userId = session?.user?.id;
+
     const { searchParams } = new URL(req.url);
     const page = Math.max(parseInt(searchParams.get("page") || "1", 10), 1);
     const limit = Math.min(
@@ -104,12 +104,27 @@ export async function GET(req: Request) {
     );
     const search = (searchParams.get("search") || "").trim();
 
-    // Only show active offers in homepage browse
-    const baseQuery: any = { status: "active" };
+    const mode = searchParams.get("mode");
+
+    // Only show active offers in homepage browse unless mode is 'mine'
+    const baseQuery: any = {};
+    
+    if (mode === 'mine') {
+      if (!userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      baseQuery.owner = userId;
+    } else {
+      baseQuery.status = "active";
+      // Exclude offers from the logged-in user for public browse
+      if (userId) {
+        baseQuery.owner = { $ne: userId };
+      }
+    }
 
     const query = { ...baseQuery };
 
-    if (search) {
+    if (search && mode !== 'mine') {
       // 1) Try matching people by name (one or many users)
       const matchingUsers = await User.find({
         name: { $regex: search, $options: "i" },
@@ -119,7 +134,10 @@ export async function GET(req: Request) {
 
       if (matchingUsers.length > 0) {
         // People search wins if any match
-        query.owner = { $in: matchingUsers.map((u) => u._id) };
+        query.owner = {
+          ...query.owner, // Preserve existing owner condition ($ne: userId)
+          $in: matchingUsers.map((u) => u._id),
+        };
       } else {
         // 2) Fall back to skill search (title/description/tags)
         query.$or = [
@@ -132,7 +150,7 @@ export async function GET(req: Request) {
 
     // Query offers with pagination
     const [offers, total] = await Promise.all([
-      Offer.find(query)
+      SkillOffer.find(query)
         .populate({
           path: "owner",
           select: "name avatarUrl ratingAvg reviewsCount",
@@ -140,9 +158,9 @@ export async function GET(req: Request) {
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
-        .select("title description tags costCredits durationMinutes owner")
+        .select("title description tags costCredits durationMinutes owner status category locationType")
         .lean(),
-      Offer.countDocuments(query),
+      SkillOffer.countDocuments(query),
     ]);
 
     const itemsPerPage = Math.min(limit, offers.length);

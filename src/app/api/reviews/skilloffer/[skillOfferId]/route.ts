@@ -1,9 +1,9 @@
 // src/app/api/reviews/skilloffer/[skillOfferId]/route.ts
 import { NextResponse } from "next/server";
-import { connectDB } from "@/src/lib/db";
+import { connectDB } from "@/lib/db";
 import mongoose from "mongoose";
-import { Review, SkillOffer } from "@/src/models";
-import { ISkillOffer } from "@/src/types";
+import { Review, SkillOffer } from "@/models";
+import { ISkillOffer } from "@/types";
 
 /**
  * Retrieves a list of reviews for a given skill offer ID
@@ -16,13 +16,13 @@ import { ISkillOffer } from "@/src/types";
  */
 export async function GET(
   req: Request,
-  { params }: { params: { skillOfferId: string } }
+  { params }: { params: Promise<{ skillOfferId: string }> }
 ) {
   try {
     await connectDB();
-    const { skillOfferId } =  await params;
+    const { skillOfferId } = await params;
 
-    console.log("skillOfferId", skillOfferId);
+
 
     if (!mongoose.Types.ObjectId.isValid(skillOfferId)) {
       return NextResponse.json(

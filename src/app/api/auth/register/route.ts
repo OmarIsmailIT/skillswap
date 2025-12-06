@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/src/lib/db";
+import { connectDB } from "@/lib/db";
 import bcrypt from "bcryptjs";
-import User from "@/src/models/User";
-import { registerSchema } from "@/src/lib/validators/auth";
-import { IUser } from "@/src/types";
+import User from "@/models/User";
+import { registerSchema } from "@/lib/validators/auth";
+import { IUser } from "@/types";
 
 export async function POST(req: Request) {
   try {

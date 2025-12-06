@@ -1,9 +1,9 @@
 // src/app/api/reviews/written/route.ts
 import { NextResponse } from "next/server";
-import { connectDB } from "@/src/lib/db";
-import { auth } from "@/src/lib/authSession";
+import { connectDB } from "@/lib/db";
+import { auth } from "@/lib/authSession";
 import mongoose from "mongoose";
-import { Review } from "@/src/models";
+import { Review } from "@/models";
 
 /**
  * Retrieves a list of reviews written by the current user.

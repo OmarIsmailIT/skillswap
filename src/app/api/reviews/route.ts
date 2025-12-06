@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/src/lib/db";
-import { auth } from "@/src/lib/authSession";
-import { reviewSchema } from "@/src/lib/validators/review";
-import { Booking, Review, User, SkillOffer } from "@/src/models";
-import { IBooking } from "@/src/types";
+import { connectDB } from "@/lib/db";
+import { auth } from "@/lib/authSession";
+import { reviewSchema } from "@/lib/validators/review";
+import { Booking, Review, User, SkillOffer } from "@/models";
+import { IBooking } from "@/types";
 import mongoose from "mongoose";
 
 /**

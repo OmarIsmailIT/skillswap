@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/src/lib/db";
-import { SkillOffer, User } from "@/src/models";
-import { auth } from "@/src/lib/authSession";
-import { updateOfferSchema } from "@/src/lib/validators/offer";
+import { connectDB } from "@/lib/db";
+import { SkillOffer, User } from "@/models";
+import { auth } from "@/lib/authSession";
+import { updateOfferSchema } from "@/lib/validators/offer";
 
 
 /**
@@ -18,7 +18,7 @@ import { updateOfferSchema } from "@/src/lib/validators/offer";
  */
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params; // no need for await here
@@ -38,7 +38,7 @@ export async function GET(
         select: "name avatarUrl ratingAvg reviewsCount credits",
       })
       .select(
-        "title description tags costCredits durationMinutes locationType bookingsCount avgRating owner"
+        "title description tags costCredits durationMinutes locationType bookingsCount avgRating owner category"
       )
       .lean();
 
@@ -69,7 +69,7 @@ export async function GET(
  */
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -127,7 +127,7 @@ export async function PUT(
  */
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -179,7 +179,7 @@ export async function DELETE(
  */
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();

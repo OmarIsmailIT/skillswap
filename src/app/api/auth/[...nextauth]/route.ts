@@ -1,15 +1,17 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { connectDB } from "@/src/lib/db";
-import User from "@/src/models/User";
-import { loginSchema } from "@/src/lib/validators/auth";
+import { connectDB } from "@/lib/db";
+import User from "@/models/User";
+import { loginSchema } from "@/lib/validators/auth";
 
 // Minimal user returned from authorize
 type AuthUser = {
   id: string;
   name: string;
   email: string;
+  onBoardingCompleted: boolean;
+  avatarUrl?: string;
 };
 
 export const authOptions: NextAuthOptions = {
@@ -44,6 +46,8 @@ export const authOptions: NextAuthOptions = {
           id: user._id.toString(),
           name: user.name,
           email: user.email,
+          onBoardingCompleted: user.onBoardingCompleted,
+          avatarUrl: user.avatarUrl,
         };
       },
     }),
@@ -59,17 +63,36 @@ export const authOptions: NextAuthOptions = {
     signIn: "/login",
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       // On sign-in, `user` is the AuthUser returned by authorize()
       if (user && "id" in user) {
         token.userId = (user as AuthUser).id; // store string id
+        token.onBoardingCompleted = (user as AuthUser).onBoardingCompleted;
+        token.avatarUrl = (user as AuthUser).avatarUrl;
       }
+      
+      // When update() is called from the client, refetch onBoardingCompleted and avatarUrl from database
+      if (trigger === "update" && token.userId) {
+        try {
+          await connectDB();
+          const dbUser = await User.findById(token.userId);
+          if (dbUser) {
+            token.onBoardingCompleted = dbUser.onBoardingCompleted;
+            token.avatarUrl = dbUser.avatarUrl;
+          }
+        } catch (error) {
+          console.error("Failed to refetch user data:", error);
+        }
+      }
+      
       return token;
     },
     async session({ session, token }) {
       // Add id to session.user
       if (session.user && token.userId) {
-        session.user.id = token.userId;
+        session.user.id = token.userId as string;
+        session.user.onBoardingCompleted = token.onBoardingCompleted as boolean;
+        session.user.image = token.avatarUrl as string | null;
       }
       return session;
     },

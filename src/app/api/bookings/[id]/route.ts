@@ -1,11 +1,12 @@
 // src/app/api/bookings/[id]/route.ts
 import { NextResponse } from "next/server";
-import { connectDB } from "@/src/lib/db";
-import { auth } from "@/src/lib/authSession";
+import { connectDB } from "@/lib/db";
+import { auth } from "@/lib/authSession";
 import mongoose from "mongoose";
-import { IBooking } from "@/src/types";
-import { completeBookingWithTransfer } from "@/src/lib/credits";
-import { User, Booking, SkillOffer } from "@/src/models";
+import { IBooking } from "@/types";
+import { completeBookingWithTransfer } from "@/lib/credits";
+import { User, Booking, SkillOffer } from "@/models";
+import { emitCreditUpdate, emitBookingUpdate, emitNotification } from "@/lib/socket";
 
 /**
  * GET /api/bookings/:id
@@ -20,7 +21,7 @@ import { User, Booking, SkillOffer } from "@/src/models";
  */
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -85,7 +86,7 @@ export async function GET(
  */
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -112,8 +113,9 @@ export async function PUT(
     const booking = await Booking.findById(bookingId)
       .populate("requester", "_id")
       .populate("provider", "_id")
-      .populate("offerSkill", "_id") // ✅ needed for bookingsCount update
+      .populate("skillOffer", "_id") // ✅ needed for bookingsCount update
       .lean<IBooking>();
+
 
     if (!booking) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
@@ -143,6 +145,20 @@ export async function PUT(
       }
 
       await Booking.updateOne({ _id: booking._id }, { status: "accepted" });
+      
+      // Emit real-time booking update
+      emitBookingUpdate(
+        [booking.requester._id.toString(), booking.provider._id.toString()],
+        { ...booking, status: "accepted" }
+      );
+      
+      // Notify requester
+      emitNotification(booking.requester._id.toString(), {
+        type: 'success',
+        title: 'Booking Accepted',
+        message: 'Your booking has been accepted by the provider!',
+      });
+      
       return NextResponse.json(
         { success: true, message: "Booking accepted" },
         { status: 200 }
@@ -167,6 +183,34 @@ export async function PUT(
         { _id: booking._id },
         { status: "canceled", cancellationReason }
       );
+      
+      // Fetch updated credits for requester
+      const updatedRequester = await User.findById(booking.requester._id).select('credits reservedCredits').lean<{credits: number; reservedCredits: number}>();
+      if (updatedRequester) {
+        emitCreditUpdate(booking.requester._id.toString(), {
+          current: updatedRequester.credits,
+          reserved: updatedRequester.reservedCredits,
+        });
+      }
+      
+      // Emit real-time booking update
+      emitBookingUpdate(
+        [booking.requester._id.toString(), booking.provider._id.toString()],
+        { ...booking, status: "canceled", cancellationReason }
+      );
+      
+      // Notify both users
+      emitNotification(booking.requester._id.toString(), {
+        type: 'info',
+        title: 'Booking Canceled',
+        message: 'Your booking has been canceled. Reserved credits have been released.',
+      });
+      
+      emitNotification(booking.provider._id.toString(), {
+        type: 'info',
+        title: 'Booking Canceled',
+        message: 'A booking has been canceled.',
+      });
 
       return NextResponse.json(
         { success: true, message: "Booking canceled" },
@@ -201,6 +245,46 @@ export async function PUT(
         { _id: booking.skillOffer._id },
         { $inc: { bookingsCount: 1 } }
       );
+      
+      // Fetch updated credits for both users
+      const [updatedRequester, updatedProvider] = await Promise.all([
+        User.findById(booking.requester._id).select('credits reservedCredits').lean<{credits: number; reservedCredits: number}>(),
+        User.findById(booking.provider._id).select('credits reservedCredits').lean<{credits: number; reservedCredits: number}>(),
+      ]);
+      
+      // Emit credit updates to both users
+      if (updatedRequester) {
+        emitCreditUpdate(booking.requester._id.toString(), {
+          current: updatedRequester.credits,
+          reserved: updatedRequester.reservedCredits,
+        });
+      }
+      
+      if (updatedProvider) {
+        emitCreditUpdate(booking.provider._id.toString(), {
+          current: updatedProvider.credits,
+          reserved: updatedProvider.reservedCredits,
+        });
+      }
+      
+      // Emit real-time booking update
+      emitBookingUpdate(
+        [booking.requester._id.toString(), booking.provider._id.toString()],
+        { ...booking, status: "completed" }
+      );
+      
+      // Notify both users
+      emitNotification(booking.requester._id.toString(), {
+        type: 'success',
+        title: 'Booking Completed',
+        message: `Your booking has been completed. ${booking.costCredits} credits transferred.`,
+      });
+      
+      emitNotification(booking.provider._id.toString(), {
+        type: 'success',
+        title: 'Booking Completed',
+        message: `Booking completed! You earned ${booking.costCredits} credits.`,
+      });
 
       return NextResponse.json(
         { success: true, message: "Booking completed" },

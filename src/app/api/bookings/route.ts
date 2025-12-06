@@ -1,12 +1,10 @@
 // src/app/api/bookings/route.ts
 import { NextResponse } from "next/server";
-import { connectDB } from "@/src/lib/db";
-import Booking from "@/src/models/Booking";
-import SkillOffer from "@/src/models/SkillOffer";
-import User from "@/src/models/User";
-import { auth } from "@/src/lib/authSession";
-import { createBookingSchema } from "@/src/lib/validators/booking";
-import { IUser, ISkillOffer, IBooking } from "@/src/types";
+import { connectDB } from "@/lib/db";
+import {Booking, SkillOffer, User} from "@/models";
+import { auth } from "@/lib/authSession";
+import { createBookingSchema } from "@/lib/validators/booking";
+import { IUser, ISkillOffer, IBooking } from "@/types";
 
 /**
  * Create a new booking
@@ -180,7 +178,7 @@ export async function GET(req: Request) {
     const [bookings, total] = await Promise.all([
       Booking.find(query)
         .select(
-          "_id skillOffer requester provider dateStart dateEnd status costCredits"
+          "_id skillOffer requester provider dateStart dateEnd status costCredits cancellationReason"
         )
         .populate("skillOffer", "title")
         .populate("requester", "name")

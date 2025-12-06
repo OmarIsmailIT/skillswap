@@ -1,11 +1,11 @@
 // src/app/api/users/me/route.ts
 import { NextResponse } from "next/server";
-import { connectDB } from "@/src/lib/db";
-import { auth } from "@/src/lib/authSession";
+import { connectDB } from "@/lib/db";
+import { auth } from "@/lib/authSession";
 import mongoose from "mongoose";
-import { User, SkillOffer } from "@/src/models";
-import { IUser } from "@/src/types";
-import { editUser } from "@/src/lib/validators/user";
+import { User, SkillOffer } from "@/models";
+import { IUser } from "@/types";
+import { editUser } from "@/lib/validators/user";
 
 /**
  * Retrieves the current user's profile, including their name, email, bio, avatar URL, credits, reserved credits, average rating, reviews count, and skills offered.
@@ -31,7 +31,7 @@ export async function GET() {
     const [user, skillOffers] = await Promise.all([
       User.findById(userId)
         .select(
-          "name email bio avatarUrl credits reservedCredits ratingAvg reviewsCount skills"
+          "name email bio avatarUrl credits reservedCredits ratingAvg reviewsCount topSkills"
         )
         .lean<IUser>(),
       SkillOffer.find({ owner: userId })
@@ -102,12 +102,13 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { bio, topSkills, avatarUrl } = editUser.parse(body);
+    const { bio, topSkills, avatarUrl, name } = editUser.parse(body);
 
     // ✅ Update user
     await User.updateOne(
       { _id: userId },
       {
+        ...(name && { name }),
         ...(bio && { bio }),
         ...(topSkills && { topSkills }),
         ...(avatarUrl && { avatarUrl }),

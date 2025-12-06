@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
-import User from "@/src/models/User";
-import Booking from "@/src/models/Booking";
-import CreditTransaction from "@/src/models/CreditTransaction";
+import User from "@/models/User";
+import Booking from "@/models/Booking";
+import CreditTransaction from "@/models/CreditTransaction";
 
 /**
  * Completes a booking and transfers credits from requester to provider.
@@ -24,7 +24,7 @@ export async function completeBookingWithTransfer(
       const provider = await User.findById(booking.provider).session(session);
       if (!requester || !provider) throw new Error("Users not found");
 
-      console.log(requester.reservedCredits);
+
       if (requester.reservedCredits < booking.costCredits) {
         throw new Error("Insufficient reserved credits");
       }
