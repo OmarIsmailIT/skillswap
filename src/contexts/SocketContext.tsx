@@ -88,7 +88,9 @@ export function SocketProvider({ children }: SocketProviderProps) {
         });
 
         socketInstance.on('connect_error', (error) => {
-            console.error('Socket connection error:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.warn('Socket connection error:', error);
+            }
             setIsConnected(false);
         });
 
